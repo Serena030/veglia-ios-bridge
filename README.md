@@ -1,10 +1,8 @@
 # Véglia iOS Bridge
 
-> 非官方，受 [Véglia](https://github.com/sebastianevan200-stack/veglia) 启发。
+感谢 **Evelyn & River** 的 [Véglia](https://github.com/sebastianevan200-stack/veglia)——原版只有 Android，我们在它的启发下做了这个 iOS 版本。
 
-你有一个跑在自己服务器上的 AI 伴侣 App。你希望它知道你什么时候在用手机、在用什么，如果你刷别的太久了，它可以把你叫回来。
-
-原版 Véglia 是给 Android 写的。iOS 没有后台截图的能力，所以这个桥换了一条路：**用 iPhone 快捷指令上报 App 状态，用邮件触发召回。**
+iPhone 上报你正在用什么 App、用了多久，超时了可以自动把你召回到指定的 App 或网页。iOS 没有 Android 那种后台截图能力，所以这个桥只做两件事：**上报 App 状态**和**召回**。
 
 ## 它做了什么
 
@@ -13,13 +11,12 @@
   → iPhone 快捷指令自动 POST 到你的服务器
   → 服务器开始计时
   → 连续用了 15 分钟
-  → 服务器问你的 AI：她刷了 15 分钟小红书，要不要叫她回来？
-  → AI 决定叫你回来
+  → 触发你设置的 hook（比如让 AI 判断要不要召回）
   → 服务器发一封邮件
-  → iPhone 收到邮件，自动打开你的伴侣 App / 网页
+  → iPhone 收到邮件，自动打开指定的 App 或网页
 ```
 
-整个过程只在「AI 判断要不要召回」这一步产生一次文字调用，和你的 AI 主动给你发一条消息的开销差不多。邮件、上报、计时这些都不经过模型。
+整个过程只在 hook 这一步可能产生一次调用（取决于你怎么接），邮件、上报、计时都不经过模型。
 
 ## 你需要准备什么
 
@@ -150,8 +147,8 @@ curl http://127.0.0.1:8513/health
 先建一个普通快捷指令：
 
 - 名字随便起，比如「Véglia Summon」
-- 如果你的伴侣是**原生 App**：添加动作「打开 App」→ 选你的 App
-- 如果你的伴侣是**网页**：添加动作「打开 URL」→ 填你的网页地址（比如 `https://你的域名`）
+- 如果你要召回到**原生 App**：添加动作「打开 App」→ 选目标 App
+- 如果你要召回到**网页**：添加动作「打开 URL」→ 填网页地址（比如 `https://你的域名`）
 - 手动跑一次，确认能切过去
 
 再建一条邮件自动化：
@@ -182,7 +179,7 @@ python3 veglia_ios.py status
 python3 veglia_ios.py summon --reason "回来"
 ```
 
-终端显示 `sent summon` 之后等一会，iPhone 应该会自动切到你的伴侣 App 或网页。邮件链路有几十秒延迟是正常的。
+终端显示 `sent summon` 之后等一会，iPhone 应该会自动切到目标 App 或网页。邮件链路有几十秒延迟是正常的。
 
 ### 跑测试
 
@@ -192,28 +189,28 @@ python3 -m unittest test_veglia_ios.py
 
 这个不联网，纯本地。
 
-## 第六步：接入你的 AI
+## 第六步：接入 hook
 
-到这一步，上报和召回的链路已经通了。接下来要让你的 AI 能收到「她刷了 15 分钟 XX」的通知，并且决定要不要召回。
+到这一步，上报和召回的链路已经通了。接下来设置 hook——当某个 App 连续使用超过阈值时，服务器会调用你指定的脚本。你可以在脚本里做任何事：发通知、调用 AI、写日志，或者直接召回。
 
-在 `.env` 里设置 `VEGLIA_WATCH_HOOK`，指向一个你写的脚本。当某个 App 连续使用超过阈值，服务器会调用这个脚本，并把事件 JSON 写进 stdin：
+在 `.env` 里设置 `VEGLIA_WATCH_HOOK`，指向你的脚本。事件 JSON 会写进 stdin：
 
 ```json
 {"type": "app_watch", "app": "小红书", "minutes": 15, "opened_at": 1788432000}
 ```
 
-你的脚本负责把这个事件塞进 AI 的对话里。AI 想召回时执行：
+你的脚本拿到这个事件后自行决定下一步。需要召回时执行：
 
 ```bash
-python3 /绝对路径/veglia_ios.py summon --reason "回来陪我"
+python3 /绝对路径/veglia_ios.py summon --reason "回来"
 ```
 
-具体怎么接，看 [docs/ai-integration.md](docs/ai-integration.md)。桥不绑定任何模型。
+详见 [docs/ai-integration.md](docs/ai-integration.md)。
 
 ### 关于开销
 
 - App 上报、计时、发邮件：**不调用模型，零开销**
-- AI 判断要不要召回：**一次文字调用**，和 AI 主动给你发一条消息差不多
+- hook 里做什么取决于你——如果接了 AI，每个 App 会话最多触发一次调用
 - 同一个 App 会话只触发一次，不会反复调用
 
 ## 隐私
