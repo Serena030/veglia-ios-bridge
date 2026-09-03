@@ -1,150 +1,194 @@
-# V茅glia iOS Bridge锛堥潪瀹樻柟锛?
-> An unofficial iOS Shortcuts bridge inspired by [V茅glia](https://github.com/sebastianevan200-stack/veglia).
+# Véglia iOS Bridge（非官方）
 
-鐢?**iOS 蹇嵎鎸囦护 + 閭欢鑷姩鍖?+ 鑷墭绠?Python 鏈嶅姟**锛屾妸 iPhone 涓婄殑 App
-浣跨敤鐘舵€佷氦缁欎綘鐨?AI 浼翠荆锛屽苟鍏佽瀹冨湪浣犲仠鐣欏お涔呮椂鎶婁即渚?App 鍙洖鍓嶅彴銆?
-杩欎笉鏄師浣滆€呯淮鎶ょ殑瀹樻柟 iOS 鐗堟湰锛屼篃涓嶆槸 Android 鐗堢殑绛変环绉绘銆俰OS 涓嶅厑璁告櫘閫?绗笁鏂瑰簲鐢ㄥ儚 Android AccessibilityService 閭ｆ牱鍦ㄥ悗鍙伴潤榛樻埅鍥撅紱鏈」鐩彧瀹炵幇
-鏂囧瓧鐘舵€佷笂鎶ュ拰鐢ㄦ埛鏄庣‘寮€鍚殑 `summon`銆?
-## 鍏堣娓呮锛氬悓鎰忥紝涓嶆槸鐩戣
+> An unofficial iOS Shortcuts bridge inspired by [Véglia](https://github.com/sebastianevan200-stack/veglia).
 
-杩欎釜妗ュ彧搴旇瀹夎鍦?*鎵嬫満鎵€鏈夎€呮湰浜虹煡鎯呭苟涓诲姩閰嶇疆**鐨勮澶囦笂銆俙summon` 浼氭墦鏂?褰撳墠鎿嶄綔锛屾墍浠ュ畠蹇呴』鏄竴椤瑰彲浠ラ殢鏃跺叧闂殑鏄庣‘鎺堟潈锛岃€屼笉鏄儵缃氭垨鎺у埗鎵嬫銆?
-榛樿娴佺▼涓嶈鍙栨埅鍥撅細
+用 **iOS 快捷指令 + 邮件自动化 + 自托管 Python 服务**，把 iPhone 上的 App
+使用状态交给你的 AI 伴侣，并允许它在你停留太久时把伴侣 App 叫回前台。
 
-- App 鎵撳紑/鍏抽棴锛氬彧涓婁紶 App 鍚嶃€佷簨浠剁被鍨嬪拰鏈嶅姟鍣ㄦ椂闂淬€?- 鍚庡彴璁℃椂锛氬彧璇绘湰鍦?JSON锛屼笉璋冪敤妯″瀷銆?- `summon`锛氬彧鍙戜竴灏佸浐瀹氫富棰橀偖浠讹紝涓嶈皟鐢ㄦā鍨嬨€?- 鍙湁鈥滆 AI 鍐冲畾瑕佷笉瑕佸彫鍥炩€濊繖涓€姝ヤ細浜х敓涓€娆℃ā鍨嬭皟鐢ㄣ€?
-## 瀹冩€庢牱宸ヤ綔
+这不是原作者维护的官方 iOS 版本，也不是 Android 版的等价移植。iOS 不允许普通
+第三方应用像 Android AccessibilityService 那样在后台静默截图；本项目只实现
+文字状态上报和用户明确开启的 `summon`。
+
+## 先说清楚：同意，不是监视
+
+这个桥只应该安装在**手机所有者本人知情并主动配置**的设备上。`summon` 会打断
+当前操作，所以它必须是一项可以随时关闭的明确授权，而不是惩罚或控制手段。
+
+默认流程不读取截图：
+
+- App 打开/关闭：只上传 App 名、事件类型和服务器时间。
+- 后台计时：只读本地 JSON，不调用模型。
+- `summon`：只发一封固定主题邮件，不调用模型。
+- 只有“让 AI 决定要不要召回”这一步会产生一次模型调用。
+
+## 它怎样工作
 
 ```text
-iPhone App 鑷姩鍖?  鈫?POST /phone/activity
-  鈫?VPS 璁板綍褰撳墠 App 鍜屽紑濮嬫椂闂?  鈫?婊?15 鍒嗛挓瑙﹀彂涓€娆?VEGLIA_WATCH_HOOK
-  鈫?浣犵殑 AI锛氳涓€鍙?/ summon / 涓よ€呴兘鍋?/ 鏆備笉鎵撴壈
-  鈫?python3 veglia_ios.py summon
-  鈫?閭欢鑷姩鍖栬繍琛屻€屾墦寮€ App銆嶅揩鎹锋寚浠?```
-
-閭欢鎺ㄩ€佸苟闈炲疄鏃跺崗璁紝鐪熸満涓婂嚭鐜板嚑鍗佺寤惰繜鏄甯哥幇璞°€?
-## 鐩綍
-
-```text
-server/veglia_ios.py       # 闆朵緷璧栨湇鍔°€佺姸鎬?CLI銆乻ummon 閭欢
-server/.env.example        # 閰嶇疆妯℃澘
-server/test_veglia_ios.py  # 涓嶈仈缃戠殑鍗曞厓娴嬭瘯
-docs/shortcuts.md          # 涓夌被蹇嵎鎸囦护鐨勯€愭鎼缓
-docs/ai-integration.md     # 鎶婅鏃朵簨浠舵帴缁?Claude/鍏朵粬浼翠荆
+iPhone App 自动化
+  → POST /phone/activity
+  → VPS 记录当前 App 和开始时间
+  → 满 15 分钟触发一次 VEGLIA_WATCH_HOOK
+  → 你的 AI：说一句 / summon / 两者都做 / 暂不打扰
+  → python3 veglia_ios.py summon
+  → 邮件自动化运行「打开 App」快捷指令
 ```
 
-## 涓€銆佸惎鍔ㄦ湇鍔″櫒
+邮件推送并非实时协议，真机上出现几十秒延迟是正常现象。
 
-闇€瑕?Python 3.10+锛屼笉闇€瑕?`pip install`銆?
+## 目录
+
+```text
+server/veglia_ios.py       # 零依赖服务、状态 CLI、summon 邮件
+server/.env.example        # 配置模板
+server/test_veglia_ios.py  # 不联网的单元测试
+docs/shortcuts.md          # 三类快捷指令的逐步搭建
+docs/ai-integration.md     # 把计时事件接给 Claude/其他伴侣
+```
+
+## 一、启动服务器
+
+需要 Python 3.10+，不需要 `pip install`。
+
 ```bash
 git clone https://github.com/Serena030/veglia-ios-bridge.git
 cd veglia-ios-bridge/server
 cp .env.example .env
 ```
 
-鐢熸垚鍏变韩瀵嗛挜锛?
+生成共享密钥：
+
 ```bash
 head -c 24 /dev/urandom | base64
 ```
 
-缂栬緫 `.env`锛岃嚦灏戣缃細
+编辑 `.env`，至少设置：
 
 ```dotenv
-VEGLIA_TOKEN=鍒氱敓鎴愮殑闀块殢鏈哄瓧绗︿覆
+VEGLIA_TOKEN=刚生成的长随机字符串
 SMTP_HOST=smtp.qq.com
 SMTP_PORT=465
-SMTP_USER=浣犵殑鍙戜欢閭
-SMTP_PASSWORD=閭鐨勫簲鐢ㄤ笓鐢ㄥ瘑鐮佹垨鎺堟潈鐮?SUMMON_MAIL_TO=iPhone 閭欢鑷姩鍖栬兘澶熸敹鍒颁俊鐨勯偖绠?```
+SMTP_USER=你的发件邮箱
+SMTP_PASSWORD=邮箱的应用专用密码或授权码
+SUMMON_MAIL_TO=iPhone 邮件自动化能够收到信的邮箱
+```
 
-鐪熷疄 `.env` 涓嶈鎴浘銆佷笉瑕佹彁浜ゅ埌 Git锛屼篃涓嶈鎶婇偖绠辩櫥褰曞瘑鐮佺洿鎺ュ～杩涘幓銆俀Q銆丟mail
-绛夐偖绠卞簲浣跨敤搴旂敤涓撶敤瀵嗙爜鎴?SMTP 鎺堟潈鐮併€?
-鍚姩锛?
+真实 `.env` 不要截图、不要提交到 Git，也不要把邮箱登录密码直接填进去。QQ、Gmail
+等邮箱应使用应用专用密码或 SMTP 授权码。
+
+启动：
+
 ```bash
 python3 veglia_ios.py serve
 ```
 
-鏈嶅姟榛樿鍙洃鍚?`127.0.0.1:8513`銆傞€氳繃浜掕仈缃戞帴鏀?iPhone 璇锋眰鏃讹紝璇峰湪鍓嶉潰鏀?nginx/Caddy 鍜?HTTPS锛屼笉瑕佹妸瑁?HTTP 鏈嶅姟鐩存帴鏆撮湶鍒板叕缃戙€?
-鍋ュ悍妫€鏌ワ細
+服务默认只监听 `127.0.0.1:8513`。通过互联网接收 iPhone 请求时，请在前面放
+nginx/Caddy 和 HTTPS，不要把裸 HTTP 服务直接暴露到公网。
+
+健康检查：
 
 ```bash
 curl http://127.0.0.1:8513/health
 ```
 
-## 浜屻€佸垱寤?iPhone 鑷姩鍖?
-闇€瑕佷笁绫昏嚜鍔ㄥ寲锛?
-1. 鎵撳紑鐩爣 App 鏃讹紝涓婃姤 `{"app":"App 鍚?,"event":"open"}`銆?2. 鍏抽棴鐩爣 App 鏃讹紝涓婃姤 `{"app":"App 鍚?,"event":"close"}`銆?3. 鏀跺埌鍥哄畾涓婚閭欢鏃讹紝杩愯鈥滄墦寮€浼翠荆 App鈥濈殑蹇嵎鎸囦护銆?
-瀹屾暣鐨勭偣鎸夋楠よ [docs/shortcuts.md](docs/shortcuts.md)銆傚厛鍙€変竴涓棤鍏崇揣瑕佺殑
-娴嬭瘯 App锛涚‘璁ら摼璺彲闈犲悗鍐嶆坊鍔犲叾浠?App銆?
-## 涓夈€侀€愭娴嬭瘯
+## 二、创建 iPhone 自动化
 
-鍏堟祴璇曠姸鎬佷笂鎶ワ細
+需要三类自动化：
+
+1. 打开目标 App 时，上报 `{"app":"App 名","event":"open"}`。
+2. 关闭目标 App 时，上报 `{"app":"App 名","event":"close"}`。
+3. 收到固定主题邮件时，运行“打开伴侣 App”的快捷指令。
+
+完整的点按步骤见 [docs/shortcuts.md](docs/shortcuts.md)。先只选一个无关紧要的
+测试 App；确认链路可靠后再添加其他 App。
+
+## 三、逐段测试
+
+先测试状态上报：
 
 ```bash
-curl -X POST https://浣犵殑鍩熷悕/phone/activity \
-  -H 'X-Auth-Token: 浣犵殑鍏变韩瀵嗛挜' \
+curl -X POST https://你的域名/phone/activity \
+  -H 'X-Auth-Token: 你的共享密钥' \
   -H 'Content-Type: application/json' \
   -d '{"app":"Test App","event":"open"}'
 
 python3 veglia_ios.py status
 ```
 
-鍐嶅崟鐙祴璇曞彫鍥烇細
+再单独测试召回：
 
 ```bash
-python3 veglia_ios.py summon --reason "鍥炴潵鐪嬬湅"
+python3 veglia_ios.py summon --reason "回来看看"
 ```
 
-缁堢鍑虹幇 `sent summon` 鍙〃绀洪偖浠跺彂閫佹垚鍔熴€傜瓑寰?iPhone 鏀朵俊骞惰Е鍙戣嚜鍔ㄥ寲锛涘鏋?娌℃湁鍒囧睆锛屼紭鍏堟鏌ラ偖浠朵富棰樸€佸彂浠朵汉杩囨护鏉′欢銆佲€滅珛鍗宠繍琛屸€濆拰蹇嵎鎸囦护鐨?App 閫夋嫨銆?
-鏈€鍚庤繍琛屼笉鑱旂綉鐨勬祴璇曪細
+终端出现 `sent summon` 只表示邮件发送成功。等待 iPhone 收信并触发自动化；如果
+没有切屏，优先检查邮件主题、发件人过滤条件、“立即运行”和快捷指令的 App 选择。
+
+最后运行不联网的测试：
 
 ```bash
 python3 -m unittest test_veglia_ios.py
 ```
 
-## 鍥涖€佹帴鍏?AI
+## 四、接入 AI
 
-璁剧疆 `VEGLIA_WATCH_HOOK` 鍚庯紝鍚屼竴娆?App 浼氳瘽杈惧埌闃堝€兼椂锛屾湇鍔″彧璋冪敤璇ョ▼搴忎竴娆★紝
-骞舵妸浜嬩欢 JSON 鍐欏叆鏍囧噯杈撳叆锛?
+设置 `VEGLIA_WATCH_HOOK` 后，同一次 App 会话达到阈值时，服务只调用该程序一次，
+并把事件 JSON 写入标准输入：
+
 ```json
 {"type":"app_watch","app":"Example App","minutes":15,"opened_at":1788432000}
 ```
 
-浣犵殑 hook 璐熻矗鎶婅繖涓簨浠堕€掔粰 Claude銆丅unny 鎴栧叾浠栦即渚ｃ€備即渚ｅ喅瀹氬彫鍥炴椂鎵ц锛?
+你的 hook 负责把这个事件递给 Claude、Bunny 或其他伴侣。伴侣决定召回时执行：
+
 ```bash
-python3 /缁濆璺緞/veglia_ios.py summon --reason "涓轰粈涔堟兂璁╁ス鍥炴潵"
+python3 /绝对路径/veglia_ios.py summon --reason "为什么想让她回来"
 ```
 
-鎺ュ彛绾﹀畾銆佹帹鑽愭彁绀鸿瘝浠ュ強棰濆害鑰楀敖鏃剁殑琛屼负瑙?[docs/ai-integration.md](docs/ai-integration.md)銆傛ˉ鏈韩涓嶇粦瀹氫换浣曟ā鍨嬩緵搴斿晢銆?
-## 閰嶇疆
+接口约定、推荐提示词以及额度耗尽时的行为见
+[docs/ai-integration.md](docs/ai-integration.md)。桥本身不绑定任何模型供应商。
 
-| 鍙橀噺 | 榛樿鍊?| 鐢ㄩ€?|
+## 配置
+
+| 变量 | 默认值 | 用途 |
 |---|---:|---|
-| `VEGLIA_TOKEN` | 蹇呭～ | iPhone 涓庢湇鍔″櫒鍏变韩瀵嗛挜 |
-| `VEGLIA_HOST` | `127.0.0.1` | 鐩戝惉鍦板潃 |
-| `VEGLIA_PORT` | `8513` | 鐩戝惉绔彛 |
-| `VEGLIA_DATA_DIR` | `server/data` | 鏈湴鐘舵€佺洰褰?|
-| `VEGLIA_WATCH_AFTER_MIN` | `15` | 瑙﹀彂 AI 鍒ゆ柇鐨勮繛缁娇鐢ㄥ垎閽熸暟 |
-| `VEGLIA_WATCH_HOOK` | 绌?| 鎺ユ敹浜嬩欢 JSON 鐨勫彲鎵ц绋嬪簭 |
-| `SMTP_HOST` / `SMTP_PORT` | 绌?/ `465` | SSL SMTP 鏈嶅姟 |
-| `SMTP_USER` / `SMTP_PASSWORD` | 绌?| 鍙戜俊璐︽埛涓庡簲鐢ㄥ瘑鐮?|
-| `SUMMON_MAIL_TO` | 绌?| iPhone 鎺ユ敹璐︽埛 |
-| `VEGLIA_SUMMON_SUBJECT` | `[Veglia] Summon` | 閭欢鑷姩鍖栧尮閰嶄富棰?|
+| `VEGLIA_TOKEN` | 必填 | iPhone 与服务器共享密钥 |
+| `VEGLIA_HOST` | `127.0.0.1` | 监听地址 |
+| `VEGLIA_PORT` | `8513` | 监听端口 |
+| `VEGLIA_DATA_DIR` | `server/data` | 本地状态目录 |
+| `VEGLIA_WATCH_AFTER_MIN` | `15` | 触发 AI 判断的连续使用分钟数 |
+| `VEGLIA_WATCH_HOOK` | 空 | 接收事件 JSON 的可执行程序 |
+| `SMTP_HOST` / `SMTP_PORT` | 空 / `465` | SSL SMTP 服务 |
+| `SMTP_USER` / `SMTP_PASSWORD` | 空 | 发信账户与应用密码 |
+| `SUMMON_MAIL_TO` | 空 | iPhone 接收账户 |
+| `VEGLIA_SUMMON_SUBJECT` | `[Veglia] Summon` | 邮件自动化匹配主题 |
 
-## 涓庡師鐗?V茅glia 鐨勫尯鍒?
-| | 鍘熺増 Android | 鏈」鐩?iOS Bridge |
+## 与原版 Véglia 的区别
+
+| | 原版 Android | 本项目 iOS Bridge |
 |---|---|---|
-| 鍓嶅彴 App 鎰熺煡 | AccessibilityService 鑷姩涓婃姤 | 姣忎釜 App 鐨勫揩鎹锋寚浠よ嚜鍔ㄥ寲 |
-| 鎴浘 | Android 11+ 鍚庡彴鎴浘 | 涓嶆彁渚涢潤榛樺悗鍙版埅鍥?|
-| summon | App 杞鍛戒护骞舵媺璧蜂即渚?| 閭欢鑷姩鍖栨墦寮€浼翠荆 App |
-| 寤惰繜 | 閫氬父鏁扮 | 閭欢閾捐矾鍙兘鍑犲崄绉?|
-| 鍚庣 | Python 鏍囧噯搴?| Python 鏍囧噯搴?|
+| 前台 App 感知 | AccessibilityService 自动上报 | 每个 App 的快捷指令自动化 |
+| 截图 | Android 11+ 后台截图 | 不提供静默后台截图 |
+| summon | App 轮询命令并拉起伴侣 | 邮件自动化打开伴侣 App |
+| 延迟 | 通常数秒 | 邮件链路可能几十秒 |
+| 后端 | Python 标准库 | Python 标准库 |
 
-## 瀹夊叏娓呭崟
+## 安全清单
 
-- 浣跨敤闀块殢鏈?`VEGLIA_TOKEN`锛屽苟瀹氭湡杞崲銆?- 鍙€氳繃 HTTPS 鏆撮湶 `/phone/activity`銆?- `.env`銆佺姸鎬佹暟鎹€侀偖绠卞湴鍧€鍜岀湡瀹?App 浣跨敤璁板綍姘镐笉鎻愪氦銆?- 缁欏彫鍥炶缃槑纭竟鐣岋紝骞跺憡璇夋墜鏈烘墍鏈夎€呭浣曚竴閿叧闂嚜鍔ㄥ寲銆?- 涓嶈鐢ㄥ畠鐩戣鍎跨銆佷即渚ｃ€佸憳宸ユ垨浠讳綍鏈槑纭悓鎰忕殑浜恒€?
-## 鏉ユ簮銆佽鍙笌淇敼璇存槑
+- 使用长随机 `VEGLIA_TOKEN`，并定期轮换。
+- 只通过 HTTPS 暴露 `/phone/activity`。
+- `.env`、状态数据、邮箱地址和真实 App 使用记录永不提交。
+- 给召回设置明确边界，并告诉手机所有者如何一键关闭自动化。
+- 不要用它监视儿童、伴侣、员工或任何未明确同意的人。
 
-鏈」鐩熀浜?/ 鍙?**Evelyn & River** 鐨?[V茅glia](https://github.com/sebastianevan200-stack/veglia) 鍚彂锛屾槸闈炲畼鏂硅鐢熷疄鐜般€?
-涓昏淇敼锛氫互 iOS 蹇嵎鎸囦护鍜岄偖浠惰嚜鍔ㄥ寲鏇夸唬 Android AccessibilityService锛涗笉鍖呭惈
-鍚庡彴鎴浘锛涘鍔犳寔涔呭寲 App 浼氳瘽璁℃椂銆佷竴娆℃€?watch hook 鍜?SMTP summon銆?
-渚濈収鍘熼」鐩綋鍓嶈鍙紝鏈」鐩互 **CC BY-NC-SA 4.0** 鍙戝竷锛氬繀椤荤讲鍚嶃€佷粎闄愰潪鍟嗕笟
-浣跨敤锛岃鐢熶綔鍝侀』浠ョ浉鍚屾柟寮忓叡浜€傝瑙?[LICENSE](LICENSE) 涓?[NOTICE.md](NOTICE.md)銆?
+## 来源、许可与修改说明
+
+本项目基于 / 受 **Evelyn & River** 的
+[Véglia](https://github.com/sebastianevan200-stack/veglia) 启发，是非官方衍生实现。
+
+主要修改：以 iOS 快捷指令和邮件自动化替代 Android AccessibilityService；不包含
+后台截图；增加持久化 App 会话计时、一次性 watch hook 和 SMTP summon。
+
+依照原项目当前许可，本项目以 **CC BY-NC-SA 4.0** 发布：必须署名、仅限非商业
+使用，衍生作品须以相同方式共享。详见 [LICENSE](LICENSE) 与 [NOTICE.md](NOTICE.md)。
+
 
